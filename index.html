@@ -2,322 +2,385 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>画像切り取り & PDF作成アプリ</title>
-  <!-- Cropper.js CSS (画像トリミングライブラリ) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-  <!-- jsPDF (PDF生成ライブラリ) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Photo Cropper Pro</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Photo2PDF">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    body {
-      background-color: #f5f7fa;
-      color: #333;
-      padding: 20px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-      text-align: center;
-      color: #1a73e8;
-    }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-    @media (min-width: 768px) {
-      .container {
-        grid-template-columns: 2fr 1fr;
-      }
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .btn {
-      display: inline-block;
-      background-color: #1a73e8;
-      color: white;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-    .btn:hover {
-      background-color: #1557b0;
-    }
-    .btn-secondary {
-      background-color: #5f6368;
-    }
-    .btn-secondary:hover {
-      background-color: #3c4043;
-    }
-    .btn-success {
-      background-color: #34a853;
-      width: 100%;
-      padding: 12px;
-      font-size: 1.1rem;
-    }
-    .btn-success:hover {
-      background-color: #2d8e47;
-    }
-    .btn-danger {
-      background-color: #ea4335;
-      padding: 4px 8px;
-      font-size: 0.8rem;
-    }
-    .file-input-wrapper {
-      margin-bottom: 15px;
-      text-align: center;
-      border: 2px dashed #dadce0;
-      padding: 30px;
-      border-radius: 8px;
-      background: #fafafa;
-    }
-    .file-input-wrapper input[type="file"] {
-      display: none;
-    }
-    .crop-container {
-      max-height: 500px;
-      margin-bottom: 15px;
-      display: none;
-      background-color: #222;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .crop-container img {
-      max-width: 100%;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .page-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 15px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    .page-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border: 1px solid #e0e0e0;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: #fff;
-    }
-    .page-item img {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    .notice {
-      font-size: 0.85rem;
-      color: #5f6368;
-      margin-top: 10px;
-      line-height: 1.4;
-    }
+    body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .cropper-container { touch-action: none; }
   </style>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen p-3 md:p-6 text-slate-800 select-none">
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-4 md:p-6">
+    <h1 class="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+      📱 Photo Cropper Pro for iPad
+    </h1>
 
-  <h1>Google Photos / 画像切り取り PDF作成アプリ</h1>
-
-  <div class="container">
-    <!-- 左側：トリミング・読み込みエリア -->
-    <div class="card">
-      <div class="file-input-wrapper" id="dropArea">
-        <p style="margin-bottom: 10px; font-weight: bold;">画像を読み込む</p>
-        <p class="notice" style="margin-bottom: 15px;">
-          Google Photosからダウンロードした画像や、端末内の画像をドラッグ＆ドロップまたは選択してください。
-        </p>
-        <label class="btn">
-          画像ファイルを選択
-          <input type="file" id="imageInput" accept="image/*">
+    <!-- 1. 写真読み込みエリア -->
+    <div class="mb-4 p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-center">
+      <div class="flex flex-wrap justify-center gap-3">
+        <label class="px-5 py-3 bg-blue-600 active:bg-blue-700 text-white font-semibold rounded-xl shadow cursor-pointer text-base flex items-center gap-2">
+          🖼️ iPadの「写真」から選ぶ
+          <input type="file" id="localFileInput" accept="image/*" multiple class="hidden" onchange="loadLocalFiles(event)">
         </label>
-      </div>
-
-      <div class="crop-container" id="cropWrapper">
-        <img id="imageToCrop" src="" alt="トリミング対象">
-      </div>
-
-      <div class="controls" id="cropControls" style="display: none;">
-        <button class="btn" id="addCropBtn">この範囲で切り取って追加</button>
-        <button class="btn btn-secondary" id="resetBtn">キャンセル</button>
+        <button id="googlePhotosBtn" onclick="handleAuth()" class="px-5 py-3 bg-slate-800 active:bg-slate-900 text-white font-semibold rounded-xl shadow text-base flex items-center gap-2">
+          ☁️ Google Photos連携
+        </button>
       </div>
     </div>
 
-    <!-- 右側：PDF化ページリスト -->
-    <div class="card">
-      <h2>PDF化するページ (<span id="pageCount">0</span>)</h2>
-      <div class="page-list" id="pageList">
-        <p class="notice" id="emptyNotice">切り取った画像がここに表示されます。</p>
+    <!-- サムネイル一覧 -->
+    <div id="thumbContainer" class="flex gap-2 overflow-x-auto pb-3 mb-4 hidden"></div>
+
+    <!-- 2. メイントリミングエリア -->
+    <div id="cropContainer" class="hidden mb-4">
+      <div class="w-full h-[45vh] bg-slate-900 rounded-xl overflow-hidden flex justify-center items-center mb-3">
+        <img id="cropImage" class="max-w-full max-h-full">
       </div>
-      <div style="margin-top: 20px;">
-        <button class="btn btn-success" id="generatePdfBtn" disabled>PDFを作成して保存</button>
+      
+      <!-- 詳細コントロールパネル -->
+      <div class="bg-slate-100 p-4 rounded-xl space-y-4">
+        
+        <!-- 比率選択 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-2">アスペクト比（縦横比）</label>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setAspectRatio(NaN)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">フリー</button>
+            <button onclick="setAspectRatio(1)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">1:1 (正方形)</button>
+            <button onclick="setAspectRatio(4/3)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">4:3</button>
+            <button onclick="setAspectRatio(3/2)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">3:2</button>
+            <button onclick="setAspectRatio(16/9)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">16:9</button>
+            <button onclick="setAspectRatio(1/1.414)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">A4 縦</button>
+            <button onclick="setAspectRatio(1.414/1)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">A4 横</button>
+            <button onclick="setAspectRatio(91/55)" class="px-3 py-1.5 bg-white border rounded-lg text-sm font-medium shadow-sm active:bg-slate-200">名刺比率</button>
+          </div>
+        </div>
+
+        <!-- 傾き補正・回転・反転 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-3">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-500 uppercase">傾き角度微調整</label>
+              <span id="rotateVal" class="text-xs font-mono font-bold bg-slate-200 px-2 py-0.5 rounded">0°</span>
+            </div>
+            <input type="range" id="rotateRange" min="-45" max="45" value="0" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer" oninput="handleRotateRange(this.value)">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">回転・反転・ズーム</label>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="rotateImage(90)" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm active:bg-slate-200">🔄 90°回転</button>
+              <button onclick="toggleFlipX()" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm active:bg-slate-200">↔️ 左右反転</button>
+              <button onclick="toggleFlipY()" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm active:bg-slate-200">↕️ 上下反転</button>
+              <button onclick="zoomImage(0.1)" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm active:bg-slate-200">🔍＋</button>
+              <button onclick="zoomImage(-0.1)" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm active:bg-slate-200">🔍ー</button>
+              <button onclick="resetCropper()" class="px-3 py-1.5 bg-white border rounded-lg text-sm shadow-sm text-red-600 active:bg-slate-200">↺ リセット</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ピクセル指定・矢印キー位置微調整 -->
+        <div class="border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">切り抜きサイズ・位置指定 (px)</label>
+            <div class="grid grid-cols-4 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-400 block">幅 (W)</span>
+                <input type="number" id="cropW" class="w-full p-1.5 border rounded text-sm text-center" onchange="applyCropBoxFromInput()">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">高さ (H)</span>
+                <input type="number" id="cropH" class="w-full p-1.5 border rounded text-sm text-center" onchange="applyCropBoxFromInput()">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">位置 (X)</span>
+                <input type="number" id="cropX" class="w-full p-1.5 border rounded text-sm text-center" onchange="applyCropBoxFromInput()">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">位置 (Y)</span>
+                <input type="number" id="cropY" class="w-full p-1.5 border rounded text-sm text-center" onchange="applyCropBoxFromInput()">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">位置の矢印微調整</label>
+            <div class="flex items-center gap-2">
+              <div class="grid grid-cols-3 gap-1 w-28">
+                <div></div>
+                <button onclick="moveCropBox(0, -2)" class="bg-white border rounded p-1 text-center shadow-sm text-xs active:bg-slate-200">▲</button>
+                <div></div>
+                <button onclick="moveCropBox(-2, 0)" class="bg-white border rounded p-1 text-center shadow-sm text-xs active:bg-slate-200">◄</button>
+                <button onclick="moveCropBox(0, 2)" class="bg-white border rounded p-1 text-center shadow-sm text-xs active:bg-slate-200">▼</button>
+                <button onclick="moveCropBox(2, 0)" class="bg-white border rounded p-1 text-center shadow-sm text-xs active:bg-slate-200">►</button>
+              </div>
+              <span class="text-xs text-slate-400">（2pxずつ移動）</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 確定ボタン -->
+        <div class="border-t pt-3 flex justify-end">
+          <button onclick="saveCroppedImage()" class="w-full md:w-auto px-6 py-3 bg-emerald-600 active:bg-emerald-700 text-white rounded-xl font-bold text-base shadow">
+            ✂️ この範囲で確定してリストに追加
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- 3. PDF出力エリア -->
+    <div id="pdfExportArea" class="hidden border-t border-slate-200 pt-4 mt-4">
+      <h2 class="text-base font-bold mb-3">📄 切り抜き済み画像 (<span id="croppedCount">0</span>枚)</h2>
+      <div id="croppedList" class="flex flex-wrap gap-3 mb-4"></div>
+      
+      <button onclick="generatePDF()" class="w-full py-3.5 bg-indigo-600 active:bg-indigo-700 text-white font-bold rounded-xl shadow-lg text-lg flex justify-center items-center gap-2">
+        📥 PDFを作成して保存
+      </button>
     </div>
   </div>
 
-  <!-- Cropper.js Script -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script>
-    const imageInput = document.getElementById('imageInput');
-    const imageToCrop = document.getElementById('imageToCrop');
-    const cropWrapper = document.getElementById('cropWrapper');
-    const cropControls = document.getElementById('cropControls');
-    const addCropBtn = document.getElementById('addCropBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const pageList = document.getElementById('pageList');
-    const emptyNotice = document.getElementById('emptyNotice');
-    const pageCountEl = document.getElementById('pageCount');
-    const generatePdfBtn = document.getElementById('generatePdfBtn');
+    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
     let cropper = null;
+    let selectedImageIndex = 0;
+    let imagesList = [];
     let croppedImages = [];
+    let scaleXVal = 1;
+    let scaleYVal = 1;
+    let isUpdatingInput = false;
 
-    // 画像選択時の処理
-    imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        loadImage(file);
-      }
-    });
+    function loadLocalFiles(e) {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
 
-    function loadImage(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imageToCrop.src = e.target.result;
-        cropWrapper.style.display = 'block';
-        cropControls.style.display = 'flex';
+      let loadedCount = 0;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          imagesList.push(evt.target.result);
+          loadedCount++;
+          if (loadedCount === files.length) {
+            renderThumbnails();
+            selectImageForCrop(imagesList.length - files.length);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
 
-        if (cropper) {
-          cropper.destroy();
+    function renderThumbnails() {
+      const container = document.getElementById('thumbContainer');
+      container.classList.remove('hidden');
+      container.innerHTML = imagesList.map((src, idx) => `
+        <img src="${src}" class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 ${idx === selectedImageIndex ? 'border-blue-500 scale-105' : 'border-transparent'}" onclick="selectImageForCrop(${idx})">
+      `).join('');
+    }
+
+    function selectImageForCrop(index) {
+      selectedImageIndex = index;
+      renderThumbnails();
+      
+      const cropContainer = document.getElementById('cropContainer');
+      const cropImage = document.getElementById('cropImage');
+      cropContainer.classList.remove('hidden');
+
+      cropImage.src = imagesList[index];
+
+      if (cropper) cropper.destroy();
+
+      scaleXVal = 1;
+      scaleYVal = 1;
+      document.getElementById('rotateRange').value = 0;
+      document.getElementById('rotateVal').textContent = '0°';
+
+      cropper = new Cropper(cropImage, {
+        viewMode: 1,
+        autoCropArea: 0.85,
+        responsive: true,
+        rotatable: true,
+        scalable: true,
+        zoomable: true,
+        touchDragZoom: true,
+        mouseWheelZoom: true,
+        crop() {
+          if (!cropper || isUpdatingInput) return;
+          const data = cropper.getCropBoxData();
+          if (data) {
+            document.getElementById('cropW').value = Math.round(data.width);
+            document.getElementById('cropH').value = Math.round(data.height);
+            document.getElementById('cropX').value = Math.round(data.left);
+            document.getElementById('cropY').value = Math.round(data.top);
+          }
         }
-
-        // Cropper.js の初期化
-        cropper = new Cropper(imageToCrop, {
-          viewMode: 1,
-          autoCropArea: 0.8,
-          responsive: true
-        });
-      };
-      reader.readAsDataURL(file);
+      });
     }
 
-    // 切り取り追加ボタン
-    addCropBtn.addEventListener('click', () => {
+    // 高度コントロール関数群
+    function setAspectRatio(ratio) {
+      if (cropper) cropper.setAspectRatio(ratio);
+    }
+
+    function rotateImage(deg) {
+      if (cropper) cropper.rotate(deg);
+    }
+
+    function handleRotateRange(deg) {
       if (!cropper) return;
-
-      // 切り取った画像Canvasを取得
-      const canvas = cropper.getCroppedCanvas({
-        maxWidth: 2048,
-        maxHeight: 2048
-      });
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      croppedImages.push(dataUrl);
-
-      updatePageList();
-      resetCropArea();
-    });
-
-    // キャンセルボタン
-    resetBtn.addEventListener('click', () => {
-      resetCropArea();
-    });
-
-    function resetCropArea() {
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
-      cropWrapper.style.display = 'none';
-      cropControls.style.display = 'none';
-      imageInput.value = '';
+      document.getElementById('rotateVal').textContent = deg + '°';
+      cropper.rotateTo(parseInt(deg));
     }
 
-    // ページリストの更新
-    function updatePageList() {
-      pageList.innerHTML = '';
-      if (croppedImages.length === 0) {
-        pageList.appendChild(emptyNotice);
-        generatePdfBtn.disabled = true;
-        pageCountEl.textContent = '0';
-        return;
-      }
+    function toggleFlipX() {
+      if (!cropper) return;
+      scaleXVal = -scaleXVal;
+      cropper.scaleX(scaleXVal);
+    }
 
-      generatePdfBtn.disabled = false;
-      pageCountEl.textContent = croppedImages.length;
+    function toggleFlipY() {
+      if (!cropper) return;
+      scaleYVal = -scaleYVal;
+      cropper.scaleY(scaleYVal);
+    }
 
-      croppedImages.forEach((imgSrc, index) => {
-        const item = document.createElement('div');
-        item.className = 'page-item';
-        item.innerHTML = `
-          <img src="${imgSrc}" alt="Page ${index + 1}">
-          <span>ページ ${index + 1}</span>
-          <button class="btn btn-danger" onclick="removePage(${index})">削除</button>
-        `;
-        pageList.appendChild(item);
+    function zoomImage(ratio) {
+      if (cropper) cropper.zoom(ratio);
+    }
+
+    function resetCropper() {
+      if (!cropper) return;
+      cropper.reset();
+      scaleXVal = 1;
+      scaleYVal = 1;
+      document.getElementById('rotateRange').value = 0;
+      document.getElementById('rotateVal').textContent = '0°';
+    }
+
+    function applyCropBoxFromInput() {
+      if (!cropper) return;
+      isUpdatingInput = true;
+      const w = parseFloat(document.getElementById('cropW').value) || 0;
+      const h = parseFloat(document.getElementById('cropH').value) || 0;
+      const x = parseFloat(document.getElementById('cropX').value) || 0;
+      const y = parseFloat(document.getElementById('cropY').value) || 0;
+
+      cropper.setCropBoxData({ left: x, top: y, width: w, height: h });
+      setTimeout(() => { isUpdatingInput = false; }, 100);
+    }
+
+    function moveCropBox(dx, dy) {
+      if (!cropper) return;
+      const data = cropper.getCropBoxData();
+      cropper.setCropBoxData({
+        left: data.left + dx,
+        top: data.top + dy,
+        width: data.width,
+        height: data.height
       });
     }
 
-    // ページ削除関数
-    window.removePage = function(index) {
+    function saveCroppedImage() {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048 });
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      
+      croppedImages.push(croppedDataUrl);
+      renderCroppedList();
+    }
+
+    function renderCroppedList() {
+      const area = document.getElementById('pdfExportArea');
+      const list = document.getElementById('croppedList');
+      const count = document.getElementById('croppedCount');
+
+      area.classList.remove('hidden');
+      count.textContent = croppedImages.length;
+
+      list.innerHTML = croppedImages.map((src, idx) => `
+        <div class="relative w-20 h-20 border rounded-lg overflow-hidden shadow-sm bg-slate-200">
+          <img src="${src}" class="w-full h-full object-cover">
+          <button onclick="removeCropped(${idx})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeCropped(index) {
       croppedImages.splice(index, 1);
-      updatePageList();
-    };
+      renderCroppedList();
+    }
 
-    // PDF生成処理
-    generatePdfBtn.addEventListener('click', () => {
+    function generatePDF() {
       if (croppedImages.length === 0) return;
 
       const { jsPDF } = window.jspdf;
-      let pdf = null;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
 
-      croppedImages.forEach((imgSrc, index) => {
-        const img = new Image();
-        img.src = imgSrc;
-        img.onload = () => {
-          const width = img.width;
-          const height = img.height;
-          const orientation = width > height ? 'l' : 'p';
+      croppedImages.forEach((imgData, idx) => {
+        if (idx > 0) doc.addPage();
 
-          if (index === 0) {
-            pdf = new jsPDF({
-              orientation: orientation,
-              unit: 'px',
-              format: [width, height]
-            });
-            pdf.addImage(imgSrc, 'JPEG', 0, 0, width, height);
-          } else {
-            pdf.addPage([width, height], orientation);
-            pdf.addImage(imgSrc, 'JPEG', 0, 0, width, height);
-          }
+        const imgProps = doc.getImageProperties(imgData);
+        const maxW = pageWidth - margin * 2;
+        const maxH = pageHeight - margin * 2;
+        
+        let width = maxW;
+        let height = (imgProps.height * width) / imgProps.width;
 
-          if (index === croppedImages.length - 1) {
-            pdf.save('cropped_photos.pdf');
-          }
-        };
+        if (height > maxH) {
+          height = maxH;
+          width = (imgProps.width * height) / imgProps.height;
+        }
+
+        const x = (pageWidth - width) / 2;
+        const y = (pageHeight - height) / 2;
+
+        doc.addImage(imgData, 'JPEG', x, y, width, height);
       });
-    });
+
+      doc.save('cropped-photos.pdf');
+    }
+
+    let tokenClient;
+    function initGoogleAuth() {
+      if (typeof google === 'undefined') return;
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+        callback: async (res) => { if (res.access_token) fetchGooglePhotos(res.access_token); }
+      });
+    }
+    function handleAuth() {
+      if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_')) {
+        alert('iPadの「写真」ボタンから直接写真を選ぶか、Google Client IDを設定してください。');
+        return;
+      }
+      if (!tokenClient) initGoogleAuth();
+      tokenClient.requestAccessToken();
+    }
+    async function fetchGooglePhotos(token) {
+      const res = await fetch('https://photospicker.googleapis.com/v1/sessions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      const session = await res.json();
+      if (session.pickerUri) window.open(session.pickerUri, '_blank');
+    }
   </script>
 </body>
 </html>
